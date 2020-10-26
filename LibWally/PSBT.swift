@@ -11,7 +11,7 @@ import CLibWally
 
 public struct KeyOrigin : Equatable {
     let fingerprint: Data
-    let path: BIP32Path
+    public let path: BIP32Path
 }
 
 func getOrigins (keypaths: wally_keypath_map, network: Network) -> [PubKey: KeyOrigin] {
@@ -32,13 +32,13 @@ func getOrigins (keypaths: wally_keypath_map, network: Network) -> [PubKey: KeyO
 }
 
 public struct PSBTInput {
-    let wally_psbt_input: wally_psbt_input
-    let origins: [PubKey: KeyOrigin]?
+    public var wally_psbt_input: wally_psbt_input
+    public let origins: [PubKey: KeyOrigin]?
 
     init(_ wally_psbt_input: wally_psbt_input, network: Network) {
         self.wally_psbt_input = wally_psbt_input
         if (wally_psbt_input.keypaths != nil) {
-            self.origins = getOrigins(keypaths: wally_psbt_input.keypaths.pointee, network: network)
+            self.origins = getOrigins(keypaths: wally_psbt_input.keypaths, network: network)
         } else {
             self.origins = nil
         }
@@ -254,7 +254,7 @@ public struct PSBT : Equatable {
 
     public init (_ psbt: Data, _ network: Network) throws {
         self.network = network
-        var psbt_bytes = UnsafeMutablePointer<UInt8>.allocate(capacity: psbt.count)
+        let psbt_bytes = UnsafeMutablePointer<UInt8>.allocate(capacity: psbt.count)
         let psbt_bytes_len = psbt.count
         psbt.copyBytes(to: psbt_bytes, count: psbt_bytes_len)
         var output: UnsafeMutablePointer<wally_psbt>?
@@ -297,7 +297,7 @@ public struct PSBT : Equatable {
     public var data: Data {
         var psbt = UnsafeMutablePointer<wally_psbt>.allocate(capacity: 1)
         psbt.initialize(to: self.wally_psbt)
-        var len = UnsafeMutablePointer<Int>.allocate(capacity: 1)
+        let len = UnsafeMutablePointer<Int>.allocate(capacity: 1)
         precondition(wally_psbt_get_length(psbt, len) == WALLY_OK)
         var bytes_out = UnsafeMutablePointer<UInt8>.allocate(capacity: len.pointee)
         var written = UnsafeMutablePointer<Int>.allocate(capacity: 1)
@@ -362,7 +362,7 @@ public struct PSBT : Equatable {
     public mutating func sign(_ privKey: Key) {
         var psbt = UnsafeMutablePointer<wally_psbt>.allocate(capacity: 1)
         psbt.initialize(to: self.wally_psbt)
-        var key_bytes = UnsafeMutablePointer<UInt8>.allocate(capacity:Int(EC_PRIVATE_KEY_LEN))
+        let key_bytes = UnsafeMutablePointer<UInt8>.allocate(capacity:Int(EC_PRIVATE_KEY_LEN))
         privKey.data.copyBytes(to: key_bytes, count: Int(EC_PRIVATE_KEY_LEN))
         defer {
            psbt.deallocate()
